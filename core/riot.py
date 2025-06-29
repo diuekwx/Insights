@@ -66,5 +66,6 @@ def champ_kills(match_timeline):
     return kill_list
 
 
-print(champ_kills(timeline))
+
+# print(champ_kills(timeline))
 # print(get_timeline(recent))

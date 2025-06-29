@@ -1,0 +1,24 @@
+{
+  "name": "insights",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron .", 
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/diuekwx/Insights.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/diuekwx/Insights/issues"
+  },
+  "homepage": "https://github.com/diuekwx/Insights#readme",
+  "description": "",
+  "dependencies": {
+    "electron": "^37.1.0"
+  }
+}
