@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    Hello World
+    <button id="myButton" onclick="getTextFromBackend()"> CLICK ME </button>
+
+    <video id="vod" width="800" controls>
+      <source id="vod-source" type="video/mp4">
+      Your browser does not support HTML video.
+    </video>    
+    <button onclick="getVideo()"> video </button>
+
+
+    <script>
+    async function getTextFromBackend() {
+      try {
+        const response = await fetch('http://127.0.0.1:5000/hello');
+        const data = await response.json();
+        document.getElementById("myButton").innerText = data.text;
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        document.getElementById("myButton").innerText = "Error!";
+      }
+    }
+
+    async function getVideo(){
+        try{
+          const response = await fetch('http://127.0.0.1:5000/get-video');
+          const data = await response.json();
+          const videoPath = `file:///${data.replace(/\\/g, '/')}`;
+
+          document.getElementById("vod-source").src = videoPath;
+          document.getElementById("vod").load();
+        }
+        catch (error){
+          console.error('Error fetching data: ', error)
+        }
+    }
+  </script>
+</body>
+</html>
