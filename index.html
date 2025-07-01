@@ -7,40 +7,59 @@
 </head>
 <body>
     Hello World
-    <button id="myButton" onclick="getTextFromBackend()"> CLICK ME </button>
-
-    <video id="vod" width="800" controls>
+    <video id="vod" width="800">
       <source id="vod-source" type="video/mp4">
       Your browser does not support HTML video.
     </video>    
     <button onclick="getVideo()"> video </button>
+    <button id="playButton" aria-label="Play" role="button" onclick="play()">►</button>
 
+    <div>
+      <progress id="progressBar" max="100" value="0"></progress>
+    </div>
 
     <script>
-    async function getTextFromBackend() {
-      try {
-        const response = await fetch('http://127.0.0.1:5000/hello');
-        const data = await response.json();
-        document.getElementById("myButton").innerText = data.text;
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        document.getElementById("myButton").innerText = "Error!";
-      }
-    }
 
     async function getVideo(){
         try{
           const response = await fetch('http://127.0.0.1:5000/get-video');
           const data = await response.json();
           const videoPath = `file:///${data.replace(/\\/g, '/')}`;
+          console.log(videoPath);
 
           document.getElementById("vod-source").src = videoPath;
           document.getElementById("vod").load();
+
+          vod.onloadedmetadata = () => {
+            videoProgress();
+          }
+
         }
         catch (error){
           console.error('Error fetching data: ', error)
         }
     }
+
+    async function videoProgress() {
+      const vod = document.getElementById("vod");
+      const progress = document.getElementById("progressBar");
+
+      vod.addEventListener("timeupdate", () => {
+        if (vod.duration) {
+          progress.value = (vod.currentTime / vod.duration) * 100;
+        }
+      });
+    }
+
+    async function play(){
+      if (vod.paused){
+        vod.play()
+      }
+      else{
+        vod.pause();
+      }
+    }
+
   </script>
 </body>
 </html>
