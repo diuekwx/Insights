@@ -14,14 +14,19 @@
     <button onclick="getVideo()"> video </button>
     <button id="playButton" aria-label="Play" role="button" onclick="play()">►</button>
 
-    <div>
-      <progress id="progressBar" max="100" value="0"></progress>
+    <div class="timeline-container">
+      <div class="tick-container" id="tick-container"></div>
+      <input type="range" id="seekbar" min="0" max="100" value="0" />
     </div>
 
     <script>
 
+
     async function getVideo(){
         try{
+          const video = document.getElementById("vod");
+          const seekbar = document.getElementById("seekbar");
+          
           const response = await fetch('http://127.0.0.1:5000/get-video');
           const data = await response.json();
           const videoPath = `file:///${data.replace(/\\/g, '/')}`;
@@ -30,25 +35,19 @@
           document.getElementById("vod-source").src = videoPath;
           document.getElementById("vod").load();
 
-          vod.onloadedmetadata = () => {
-            videoProgress();
-          }
+          video.addEventListener("timeupdate", () => {
+            if (video.duration) {
+              seekbar.value = (video.currentTime / video.duration) * 100;
+              }
+          });
+          seekbar.addEventListener("input", () => {
+            video.currentTime = (seekbar.value / 100) * video.duration;
+          })
 
         }
         catch (error){
           console.error('Error fetching data: ', error)
         }
-    }
-
-    async function videoProgress() {
-      const vod = document.getElementById("vod");
-      const progress = document.getElementById("progressBar");
-
-      vod.addEventListener("timeupdate", () => {
-        if (vod.duration) {
-          progress.value = (vod.currentTime / vod.duration) * 100;
-        }
-      });
     }
 
     async function play(){
