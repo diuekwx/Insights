@@ -1,32 +1,28 @@
-import psutil
-from recorder import record, websocket, disconnect
+from core.recorder import record, websocket, disconnect
 import time
+from core.liveclient import get_data
+from core.utils import check_process
 
-
-def check_process(process_name):
-    for proc in psutil.process_iter(['name']):
-        if proc.info['name'] == process_name:
-            return True
-        
-    return False
 
 # def all_processes():
 #     for proc in psutil.process_iter(['name']):
 #         print(proc.info['name'])
 
-
-def main():
+def detection():
     ws = websocket()
     while not check_process("League of Legends.exe"):
-        print("Waiting")
+        print("waiting")
         time.sleep(2)
-    print("found")
-    record(ws)
-    while check_process("League of Legends.exe"):
-        time.sleep(1)
-    print("ending")
-    disconnect(ws)
 
-if __name__ == "__main__":
-    main()
+    print("founds")
+    record(ws)
+
+    obs_start_time = time.time()
+
+    timeline = get_data(obs_start_time)
+
+    print("done")
+    disconnect(ws)
+    return timeline
+
 
