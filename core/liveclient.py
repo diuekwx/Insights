@@ -20,6 +20,7 @@ def lockfile():
     pw = stuff[3]
     return port, pw
 
+#returns full id with tag
 def get_summoner():
     url = "https://127.0.0.1:2999/liveclientdata/activeplayername"
     try:
@@ -28,11 +29,6 @@ def get_summoner():
     except Exception as e:
         print("Summoner not found")
 
-def offsetCalculation():
-    return time.time 
-
-print(time.perf_counter())
-
 #live client api
 # probably have to use live eventdata because of recording offset//dont know how fast updated
 def get_data(obs_start_time, poll_interval=1):
@@ -40,6 +36,8 @@ def get_data(obs_start_time, poll_interval=1):
     game_events = []
     seen_ids = set()
     offset = None
+
+    summoner_name = get_summoner().split("#")[0]
 
     print("Started polling live events...")
 
@@ -63,7 +61,7 @@ def get_data(obs_start_time, poll_interval=1):
                         offset = time.time() - obs_start_time
                         print(f"GameStart detected. Offset = {offset:.2f}s")
 
-                    elif name == "ChampionKill":
+                    elif name == "ChampionKill" and event["KillerName"] == summoner_name:
                         vod_time = time.time() - obs_start_time
                         print(f"[{vod_time:.2f}s] Kill: {event['KillerName']} → {event['VictimName']}")
                         game_events.append({
@@ -74,7 +72,7 @@ def get_data(obs_start_time, poll_interval=1):
                             "kills": 1
                         })
 
-                    elif name == "Multikill":
+                    elif name == "Multikill" and event["KillerName"] == summoner_name:
                         vod_time = time.time() - obs_start_time
                         print(f"[{vod_time:.2f}s] Multikill: {event['KillerName']} x{event['KillStreak']}")
                         game_events.append({
