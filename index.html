@@ -11,18 +11,36 @@
       <source id="vod-source" type="video/mp4">
       Your browser does not support HTML video.
     </video>    
-    <button onclick="getVideo()"> video </button>
+    <!-- <button onclick="getVideo()"> video </button> -->
+    <button onclick="startRecording()"> start </button>
     <button id="playButton" aria-label="Play" role="button" onclick="play()">►</button>
-
+    <button onclick="getTicks()">hehe</button>
     <div class="timeline-container">
       <div class="tick-container" id="tick-container"></div>
-      <input type="range" id="seekbar" min="0" max="100" value="0" />
+      <input type="range" list="tickmarks" id="seekbar" min="0" max="100" value="0" />
+      <datalist id="tickmarks">
+
+      </datalist>
     </div>
+
+
 
     <script>
 
+      async function startRecording(){
+        try{
+        const response = await fetch('http://127.0.0.1:5000/start-recording');
+        const data = await response.json();
+        console.log("timeline data !", data);
+        getVideo(data);
+      }
+      catch (error) {
+        console.error('Error game stats', error)
+      }
+      }
 
-    async function getVideo(){
+
+    async function getVideo(timelineData){
         try{
           const video = document.getElementById("vod");
           const seekbar = document.getElementById("seekbar");
@@ -35,14 +53,35 @@
           document.getElementById("vod-source").src = videoPath;
           document.getElementById("vod").load();
 
+          video.addEventListener("loadedmetadata", () => {
+            seekbar.max = video.duration;
+          });
+          
           video.addEventListener("timeupdate", () => {
             if (video.duration) {
-              seekbar.value = (video.currentTime / video.duration) * 100;
+              // seekbar.value = (video.currentTime / video.duration) * 100;
+              seekbar.value = video.currentTime;
               }
           });
           seekbar.addEventListener("input", () => {
-            video.currentTime = (seekbar.value / 100) * video.duration;
+            video.currentTime = seekbar.value;
           })
+
+          const events = timelineData.map(event => event.vod_time);
+          console.log(events);
+          for (let i = 0; i < Object.keys(timelineData).length; i++){
+            events.push(Object.keys(timelineData)[i]);
+          }
+          const datalist = document.getElementById("tickmarks");
+          datalist.innerHTML = "";
+
+          events.forEach(time => {
+            const option = document.createElement("option");
+            option.value = Math.round(time); 
+            print(option.value)
+            datalist.appendChild(option);
+          });
+
 
         }
         catch (error){
@@ -56,6 +95,17 @@
       }
       else{
         vod.pause();
+      }
+    }
+
+    async function getTicks(){
+      try{
+        const response = await fetch('http://127.0.0.1:5000/game-stats');
+        const data = response.json();
+        console.log(data);
+      }
+      catch{
+        console.error('Error game stats', error)
       }
     }
 

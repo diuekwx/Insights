@@ -57,7 +57,8 @@ def get_data(obs_start_time, poll_interval=1):
                     seen_ids.add(event_id)
 
                     name = event["EventName"]
-
+                    #consider case where they start recording in middle of game
+                    #make sure gamestart -> never little offset
                     if name == "GameStart":
                         offset = time.time() - obs_start_time
                         print(f"GameStart detected. Offset = {offset:.2f}s")
@@ -82,7 +83,7 @@ def get_data(obs_start_time, poll_interval=1):
                             "vod_time": vod_time,
                             "kills": event["KillStreak"]
                         })
-
+        # end of game leads to exception 
         except Exception as e:
             print("Error polling:", e)
 
