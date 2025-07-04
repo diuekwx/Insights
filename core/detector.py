@@ -1,14 +1,11 @@
-from core.recorder import record, websocket, disconnect
+from core.recorder import *
 import time
 from core.liveclient import get_data
 from core.utils import check_process
 
 
-# def all_processes():
-#     for proc in psutil.process_iter(['name']):
-#         print(proc.info['name'])
-
 def detection():
+    launch_obs()
     ws = websocket()
     while not check_process("League of Legends.exe"):
         print("waiting")

@@ -4,6 +4,7 @@ from .settings import OBS
 import subprocess
 import glob
 import os
+from core.utils import check_process
 
 def compress_video(input_path, output_path, crf=28):
     subprocess.run([
@@ -13,6 +14,19 @@ def compress_video(input_path, output_path, crf=28):
         '-crf', str(crf),
         output_path
     ])
+
+def launch_obs():
+    obs_path = "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"
+    obs_dir = os.path.dirname(obs_path)
+    running = check_process("obs64.exe")
+    if not running: 
+        print("obs opened")
+        subprocess.Popen([
+            obs_path,
+            "--minimize-to-tray"
+        ], 
+        cwd=obs_dir)
+    time.sleep(5)
 
 def websocket():
     ws = obs.ReqClient(host="localhost", port=4455, password=OBS)
@@ -50,7 +64,7 @@ def record(ws):
         print("Scene set to leaguegame")
         ws.start_record()
         print("recording") 
-        
 
-    except KeyboardInterrupt:
+    except KeyboardInterrupt or Exception:
         disconnect(ws)
+        
