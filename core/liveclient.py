@@ -3,7 +3,8 @@ import requests
 import urllib3
 import os
 import time
-from core.utils import check_process
+from core.utils import *
+from core.riot import *
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # league client api 
@@ -28,6 +29,31 @@ def get_summoner():
         return res.json()
     except Exception as e:
         print("Summoner not found")
+
+def player_list():
+    url = "https://127.0.0.1:2999/liveclientdata/playerlist"
+    players = []
+    try:
+        res = requests.get(url, verify=False)
+        data = res.json()
+        for player in data:
+            players.append(player["riotId"])
+
+    except:
+        print("shit dont work")
+
+def active_summoners_kills():
+    summ = get_summoner().split()
+    ppuid = get_summoner_by_name("americas", summ[0], summ[1])
+    match = most_recent_match(ppuid)
+    timeline = get_timeline(match)
+    kills = champ_kills(timeline)
+    player_kills = []
+    for kill in kills:
+        if kill[1] == get_summoner():
+            player_kills.append(kill)
+    return player_kills
+
 
 #live client api
 # probably have to use live eventdata because of recording offset//dont know how fast updated
@@ -69,6 +95,7 @@ def get_data(obs_start_time, poll_interval=1):
                             "killer": event["KillerName"],
                             "victim": event["VictimName"],
                             "vod_time": vod_time,
+                            "real_time": event["EventTime"],
                             "kills": 1
                         })
 
@@ -79,6 +106,7 @@ def get_data(obs_start_time, poll_interval=1):
                             "type": "multikill",
                             "killer": event["KillerName"],
                             "vod_time": vod_time,
+                            "real_time": event["EventTime"],
                             "kills": event["KillStreak"]
                         })
         # end of game leads to exception 
@@ -92,3 +120,13 @@ def get_data(obs_start_time, poll_interval=1):
         time.sleep(poll_interval)
 
     return game_events
+
+def active_player_data(gameEvents):
+    activeSummonerKills = active_summoners_kills()
+    playerEvents = []
+    for event in gameEvents:
+        for kills in activeSummonerKills:
+            if event["real_time"] == kills[0]:
+                playerEvents.append(event)
+    return playerEvents
+
