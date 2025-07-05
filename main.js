@@ -11,7 +11,7 @@ function createWindow() {
     },
   });
 
-  win.loadFile('index.html');
+  win.loadFile('public/index.html');
 
   const python = spawn('python', ['backend/server.py']);
   python.stdout.on('data', (data) => console.log(`Python: ${data}`));

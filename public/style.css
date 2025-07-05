@@ -1,0 +1,110 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px;
+    color: white;
+}
+.video-wrapper {
+    position: relative;
+    width: 800px;
+    height: 450px;
+}
+
+#vod {
+    width: 100%;
+    height: 100%;
+    display: block;
+    z-index: 1;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: black;
+}
+
+#vod-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #1f1f1f;
+    color: #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    border-radius: 8px;
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+}
+
+video {
+    width: 800px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+button {
+    background-color: #1f1f1f;
+    color: white;
+    border: 1px solid #333;
+    padding: 6px 12px;
+    margin: 6px 4px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+button:hover {
+    background-color: #333;
+    color: #ffcc00;
+}
+
+.timeline-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 800px;
+    margin-top: 20px;
+}
+
+.tick-container {
+    height: 6px;
+    width: 100%;
+    background-color: #333;
+    border-radius: 4px;
+    position: relative;
+    margin-bottom: 8px;
+}
+
+#seekbar {
+    width: 100%;
+    appearance: none;
+    height: 8px;
+    background: #555;
+    border-radius: 5px;
+    outline: none;
+    transition: background 0.3s;
+}
+
+#seekbar::-webkit-slider-thumb {
+    appearance: none;
+    width: 14px;
+    height: 14px;
+    background: #ffcc00;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 1px solid #000;
+    box-shadow: 0 0 2px #000;
+}
+
+#seekbar::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: #ffcc00;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
