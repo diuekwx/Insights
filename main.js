@@ -1,6 +1,12 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { spawn } = require('child_process');
+
+// use the project's venv when it exists (that's where requirements.txt is
+// installed); otherwise fall back to whatever python is on PATH
+const venvPython = path.join(__dirname, 'venv', 'Scripts', 'python.exe');
+const pythonExe = fs.existsSync(venvPython) ? venvPython : 'python';
 
 let python;
 
@@ -16,7 +22,7 @@ function createWindow() {
 
 function startBackend() {
   // cwd: resolve backend/server.py from the app folder, not wherever electron was launched
-  python = spawn('python', ['backend/server.py'], { cwd: __dirname });
+  python = spawn(pythonExe, ['backend/server.py'], { cwd: __dirname });
   python.stdout.on('data', (data) => console.log(`Python: ${data}`));
   python.stderr.on('data', (data) => console.error(`Python error: ${data}`));
 }
