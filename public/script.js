@@ -59,9 +59,6 @@
 
           const events = timelineData.map(event => event.vod_time);
           console.log(events);
-          for (let i = 0; i < Object.keys(timelineData).length; i++){
-            events.push(Object.keys(timelineData)[i]);
-          }
           const datalist = document.getElementById("tickmarks");
           datalist.innerHTML = "";
 
@@ -70,7 +67,7 @@
           events.forEach(time => {
             const option = document.createElement("option");
             option.value = Math.round(time); 
-            print(option.value)
+            console.log(option.value)
             datalist.appendChild(option);
           });
 
@@ -93,10 +90,10 @@
     async function getTicks(){
       try{
         const response = await fetch('http://127.0.0.1:5000/game-stats');
-        const data = response.json();
+        const data = await response.json();
         console.log(data);
       }
-      catch{
+      catch (error){
         console.error('Error game stats', error)
       }
     }
