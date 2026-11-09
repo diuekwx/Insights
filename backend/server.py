@@ -64,9 +64,13 @@ def stop():
 def video():
     # get video after disconnect -> should return the compressed video
     ws = websocket()
-    path = get_path(ws)
-    recent_path = retrieve_recent(path)
-    
+    try:
+        path = get_path(ws)
+        recent_path = retrieve_recent(path)
+    finally:
+        # each call opened a new OBS connection and never closed it
+        ws.disconnect()
+
     return jsonify(recent_path)
 
 
