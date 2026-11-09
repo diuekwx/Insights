@@ -66,7 +66,8 @@ def active_summoners_kills():
 
 #live client api
 # probably have to use live eventdata because of recording offset//dont know how fast updated
-def get_data(obs_start_time, poll_interval=1):
+# stop: optional threading.Event; when set, polling ends early
+def get_data(obs_start_time, poll_interval=1, stop=None):
     url = "https://127.0.0.1:2999/liveclientdata/eventdata"
     game_events = []
     seen_ids = set()
@@ -76,7 +77,7 @@ def get_data(obs_start_time, poll_interval=1):
     # so wait until it returns the player's name (a string)
     summoner = get_summoner()
     while not isinstance(summoner, str):
-        if not check_process("League of Legends.exe"):
+        if not check_process("League of Legends.exe") or (stop and stop.is_set()):
             return game_events
         time.sleep(poll_interval)
         summoner = get_summoner()
@@ -144,6 +145,9 @@ def get_data(obs_start_time, poll_interval=1):
 
         if not check_process("League of Legends.exe"):
             print("Game has ended.")
+            break
+        if stop and stop.is_set():
+            print("Stopped early.")
             break
 
         time.sleep(poll_interval)

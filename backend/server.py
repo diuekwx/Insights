@@ -41,10 +41,15 @@ def start_or_stop_recording():
             finally:
                 is_recording = False
         else:
+            if not is_recording:
+                return jsonify({"text": "No recording detected"})
+            # ask the running detection() to finish; its request then stops
+            # OBS, compresses and returns the timeline as usual. is_recording
+            # is reset there, once it is really done
             print("Stopping early...")
-            is_recording = False
-            disconnect()
-        
+            request_stop()
+            return jsonify({"text": "Stopping recording"})
+
         # an empty list (game with no kills) is still a timeline
         return jsonify(timeline if timeline is not None else {"status": "Recording stopped. No timeline available."})
     
@@ -53,12 +58,12 @@ def start_or_stop_recording():
 
 @app.route("/stop-recording")
 def stop():
-    try:
-
-        disconnect()
-    except:
+    # same as /start-recording?recording=false
+    if not is_recording:
         return jsonify({"text": "No recording detected"})
-    
+    request_stop()
+    return jsonify({"text": "Stopping recording"})
+
 
 @app.route("/get-video")
 def video():
