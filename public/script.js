@@ -1,19 +1,19 @@
-async function stopRecording(){
+    async function stopRecording(){
         try{
           const startButton = document.getElementById("startBtn");
           startButton.innerHTML = "start";
-          await fetch('http://127.0.0.1:5000/stop-recording');
+          await fetch('http://127.0.0.1:5000/start-recording?recording=false');
         }
         catch(error){
           console.error('Error stopping', error);
         }
       }
 
-      async function startRecording(){
+    async function startRecording(){
         try{
         const startButton = document.getElementById("startBtn");
         startButton.innerHTML = "recording";
-        const response = await fetch('http://127.0.0.1:5000/start-recording');
+        const response = await fetch('http://127.0.0.1:5000/start-recording?recording=true');
         const data = await response.json();
         console.log("timeline data !", data);
         getVideo(data);
@@ -60,6 +60,8 @@ async function stopRecording(){
           }
           const datalist = document.getElementById("tickmarks");
           datalist.innerHTML = "";
+
+          console.log("response", response);
 
           events.forEach(time => {
             const option = document.createElement("option");
