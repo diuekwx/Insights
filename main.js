@@ -21,8 +21,10 @@ function createWindow() {
 }
 
 function startBackend() {
-  // cwd: resolve backend/server.py from the app folder, not wherever electron was launched
-  python = spawn(pythonExe, ['backend/server.py'], { cwd: __dirname });
+  // cwd: resolve backend/server.py from the app folder, not wherever electron was launched.
+  // -u: Python buffers print() output when it goes to a pipe, so without it the
+  // recorder's messages would show up in the terminal late, in chunks
+  python = spawn(pythonExe, ['-u', 'backend/server.py'], { cwd: __dirname });
   python.stdout.on('data', (data) => console.log(`Python: ${data}`));
   python.stderr.on('data', (data) => console.error(`Python error: ${data}`));
 }
