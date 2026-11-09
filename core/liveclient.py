@@ -63,7 +63,15 @@ def get_data(obs_start_time, poll_interval=1):
     seen_ids = set()
     offset = None
 
-    summoner_name = get_summoner().split("#")[0]
+    # the game process starts at the loading screen, before this API answers,
+    # so wait until it returns the player's name (a string)
+    summoner = get_summoner()
+    while not isinstance(summoner, str):
+        if not check_process("League of Legends.exe"):
+            return game_events
+        time.sleep(poll_interval)
+        summoner = get_summoner()
+    summoner_name = summoner.split("#")[0]
 
     print("Started polling live events...")
 

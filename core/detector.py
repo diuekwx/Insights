@@ -16,10 +16,12 @@ def detection():
 
     obs_start_time = time.time()
 
-    timeline = get_data(obs_start_time)
-
-    print("done")
-    disconnect(ws)
+    # always stop OBS, even if polling crashes
+    try:
+        timeline = get_data(obs_start_time)
+    finally:
+        print("done")
+        disconnect(ws)
     return timeline
 
 

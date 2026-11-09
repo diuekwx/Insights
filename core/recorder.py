@@ -45,18 +45,21 @@ def retrieve_recent(path):
 
 
 def disconnect(ws):
-    ws.stop_record()
-    time.sleep(2)
-    record_path =  get_path(ws)
-    
-    # list_of_files = glob.glob(os.path.join(record_path, '*.mp4'))
-    # list_of_files.sort(key=os.path.getmtime)
-    
-    most_recent = retrieve_recent(record_path)
+    try:
+        ws.stop_record()
+        time.sleep(2)
+        record_path =  get_path(ws)
 
-    compressed_path = most_recent.replace(".mp4", "_compressed.mp4")
-    compress_video(most_recent, compressed_path)
-    ws.disconnect()
+        # list_of_files = glob.glob(os.path.join(record_path, '*.mp4'))
+        # list_of_files.sort(key=os.path.getmtime)
+
+        most_recent = retrieve_recent(record_path)
+
+        compressed_path = most_recent.replace(".mp4", "_compressed.mp4")
+        compress_video(most_recent, compressed_path)
+    finally:
+        # close the websocket even if finding/compressing the file fails
+        ws.disconnect()
 
 def record(ws):
     try:
@@ -65,6 +68,9 @@ def record(ws):
         ws.start_record()
         print("recording") 
 
-    except KeyboardInterrupt or Exception:
-        disconnect(ws)
+    except (KeyboardInterrupt, Exception):
+        # recording never started, so there is nothing to stop; just close
+        # the connection and let the caller see the error
+        ws.disconnect()
+        raise
         
