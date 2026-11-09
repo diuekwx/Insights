@@ -36,11 +36,22 @@ def launch_obs():
             "--minimize-to-tray"
         ], 
         cwd=obs_dir)
-    time.sleep(5)
+        # give OBS a head start loading its scenes; websocket() below keeps
+        # retrying until its server answers
+        time.sleep(5)
 
-def websocket():
-    ws = obs.ReqClient(host="localhost", port=4455, password=OBS)
-    return ws
+def websocket(timeout=30):
+    # a freshly started OBS takes a few seconds to open its websocket server,
+    # so retry instead of failing the whole recording on the first refusal
+    deadline = time.time() + timeout
+    while True:
+        try:
+            return obs.ReqClient(host="localhost", port=4455, password=OBS)
+        except Exception as e:
+            if time.time() >= deadline:
+                raise
+            print("OBS not ready yet:", e)
+            time.sleep(2)
 
 def get_path(ws):
     return ws.get_record_directory().record_directory
