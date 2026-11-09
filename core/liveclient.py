@@ -95,8 +95,14 @@ def get_data(obs_start_time, poll_interval=1):
                 # anchored to the current game time so it is also right when
                 # polling starts mid-game (old events arrive all at once then)
                 if offset is None:
-                    offset = (time.time() - obs_start_time) - game_time()
-                    print(f"Offset = {offset:.2f}s")
+                    current = game_time()
+                    # a clock still at 0 (loading screen) can't anchor anything yet
+                    if current > 0:
+                        offset = (time.time() - obs_start_time) - current
+                        print(f"Offset = {offset:.2f}s")
+                if offset is None:
+                    # leave events unseen; they are read again on the next poll
+                    events = []
 
                 for event in events:
                     event_id = event.get("EventID")
