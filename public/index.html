@@ -3,30 +3,76 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Insights!!!</title>
+  <title>Insights</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 
 <body>
-  <div class="video-wrapper">
-    <div id="vod-placeholder">Vod will be loaded here</div>
-    <video id="vod">
-      <source id="vod-source" type="video/mp4">
-      Your browser does not support HTML video.
-    </video>
-  </div> 
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-name">Insights</span>
+    </div>
 
-  <div>
-    <button id="startBtn" onclick="startRecording()">start</button>
-    <button onclick="stopRecording()">stop</button>
-    <button id="playButton" aria-label="Play" role="button" onclick="play()">►</button>
-  </div>
+    <div class="status" id="status" data-state="idle" role="status" aria-live="polite">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span id="status-text">Idle</span>
+      <span class="status-hint" id="status-hint"></span>
+    </div>
 
-  <div class="timeline-container">
-    <div class="tick-container" id="tick-container"></div>
-    <input type="range" list="tickmarks" id="seekbar" min="0" max="100" value="0" />
-    <datalist id="tickmarks"></datalist>
-  </div>
+    <button id="recordBtn" class="record-btn" onclick="toggleRecording()">
+      <span class="record-icon" aria-hidden="true"></span>
+      <span id="recordLabel">Start</span>
+    </button>
+  </header>
+
+  <main class="layout">
+    <section class="player">
+      <div class="video-frame">
+        <div id="vod-placeholder" class="placeholder">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true">
+            <rect x="2.5" y="6" width="13" height="12" rx="2.5"/>
+            <path d="M15.5 10.5l5-3v9l-5-3"/>
+          </svg>
+          <p class="placeholder-title">No recording loaded</p>
+          <p class="placeholder-text">Press Start before a game. When the game ends, the video and your key moments show up here.</p>
+        </div>
+        <video id="vod" onclick="play()">
+          <source id="vod-source" type="video/mp4">
+          Your browser does not support HTML video.
+        </video>
+      </div>
+
+      <div class="controls">
+        <button id="playButton" class="icon-btn" aria-label="Play" onclick="play()" disabled>
+          <svg class="icon-play" viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 2.6v10.8a.6.6 0 0 0 .92.5l8.3-5.4a.6.6 0 0 0 0-1L5.42 2.1a.6.6 0 0 0-.92.5z"/></svg>
+          <svg class="icon-pause" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3" height="11" rx="1"/><rect x="9.5" y="2.5" width="3" height="11" rx="1"/></svg>
+        </button>
+        <span class="time"><span id="current-time">0:00</span> / <span id="duration">0:00</span></span>
+        <div class="legend" aria-hidden="true">
+          <span class="legend-item"><span class="swatch kill"></span>Kill</span>
+          <span class="legend-item"><span class="swatch multikill"></span>Multikill</span>
+        </div>
+      </div>
+
+      <div class="timeline">
+        <div id="track" class="track" role="slider" tabindex="0" aria-label="Seek"
+             aria-valuemin="0" aria-valuemax="0" aria-valuenow="0">
+          <div class="track-rail"><div id="progress" class="track-progress"></div></div>
+          <div id="markers" class="markers"></div>
+          <div id="playhead" class="playhead"></div>
+        </div>
+      </div>
+    </section>
+
+    <aside class="events">
+      <div class="events-header">
+        <h2>Key moments</h2>
+        <span id="event-count" class="count">0</span>
+      </div>
+      <ul id="event-list" class="event-list"></ul>
+    </aside>
+  </main>
 
   <script src="./script.js"></script>
 
