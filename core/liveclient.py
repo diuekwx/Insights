@@ -25,7 +25,7 @@ def lockfile():
 def get_summoner():
     url = "https://127.0.0.1:2999/liveclientdata/activeplayername"
     try:
-        res = requests.get(url, verify=False)
+        res = requests.get(url, verify=False, timeout=5)
         return res.json()
     except Exception as e:
         print("Summoner not found")
@@ -33,14 +33,14 @@ def get_summoner():
 #current game clock in seconds
 def game_time():
     url = "https://127.0.0.1:2999/liveclientdata/gamestats"
-    res = requests.get(url, verify=False)
+    res = requests.get(url, verify=False, timeout=5)
     return res.json()["gameTime"]
 
 def player_list():
     url = "https://127.0.0.1:2999/liveclientdata/playerlist"
     players = []
     try:
-        res = requests.get(url, verify=False)
+        res = requests.get(url, verify=False, timeout=5)
         data = res.json()
         for player in data:
             players.append(player["riotId"])
@@ -83,7 +83,7 @@ def get_data(obs_start_time, poll_interval=1):
 
     while True:
         try:
-            res = requests.get(url, verify=False)
+            res = requests.get(url, verify=False, timeout=5)
             if res.status_code == 200:
                 data = res.json()
                 events = data["Events"]

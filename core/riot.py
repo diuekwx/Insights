@@ -11,13 +11,13 @@ REGION = "americas"
 def get_summoner_by_name(region, gameName, tagLine):
     url = f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{gameName}/{tagLine}"
     headers = {"X-Riot-Token": API_KEY}
-    res = requests.get(url, headers=headers)
+    res = requests.get(url, headers=headers, timeout=10)
     return res.json()
 
 def get_summoner_by_puuid(region, puuid):
     url = f"https://{region}.api.riotgames.com/riot/account/v1/accounts/by-puuid/{puuid}"
     headers = {"X-Riot-Token": API_KEY}
-    res = requests.get(url, headers=headers)
+    res = requests.get(url, headers=headers, timeout=10)
     return (res.json()["gameName"] + "#" + res.json()["tagLine"])
 
 
@@ -29,7 +29,7 @@ def get_summoner_by_puuid(region, puuid):
 def most_recent_match(puuid):
     url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids"
     headers = {"X-Riot-Token": API_KEY}
-    res = requests.get(url,headers=headers)
+    res = requests.get(url,headers=headers, timeout=10)
     return res.json()
 
 # recent = most_recent_match(data["puuid"])[0]
@@ -38,7 +38,7 @@ def most_recent_match(puuid):
 def get_timeline(matchId):
     url = f"https://{REGION}.api.riotgames.com/lol/match/v5/matches/{matchId}/timeline"
     headers = {"X-Riot-Token": API_KEY}
-    res = requests.get(url,headers=headers)
+    res = requests.get(url,headers=headers, timeout=10)
     return res.json()
 
 def participants(match_timeline):
