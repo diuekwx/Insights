@@ -1,5 +1,5 @@
 import psutil
-
+import requests
 
 def check_process(process_name):
     for proc in psutil.process_iter(['name']):
@@ -7,3 +7,8 @@ def check_process(process_name):
             return True
         
     return False
+
+
+def all_processes():
+    for proc in psutil.process_iter(['name']):
+        print(proc.info['name'])

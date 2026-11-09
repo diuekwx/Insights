@@ -6,3 +6,6 @@ __pycache__/
 *.py[cod]
 
 node_modules/
+
+# saved games (kill lists + video paths), written by core/games.py
+games/
