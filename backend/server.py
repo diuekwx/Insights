@@ -29,15 +29,24 @@ def start_or_stop_recording():
         recording = request.args.get("recording", "false").lower() == "true"
         print("recording", recording)
         if recording:
+            # Flask serves requests on separate threads, so a second click
+            # would start a second recorder alongside the first
+            if is_recording:
+                return jsonify({"text": "Already recording"})
             print("Starting recording...")
             is_recording = True
-            timeline = detection()
+            timeline = None
+            try:
+                timeline = detection()
+            finally:
+                is_recording = False
         else:
             print("Stopping early...")
             is_recording = False
             disconnect()
         
-        return jsonify(timeline if timeline else {"status": "Recording stopped. No timeline available."})
+        # an empty list (game with no kills) is still a timeline
+        return jsonify(timeline if timeline is not None else {"status": "Recording stopped. No timeline available."})
     
     except Exception as e:
         return jsonify({"text": "Error starting/stopping recording", "error": str(e)})

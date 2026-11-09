@@ -16,7 +16,11 @@
         const response = await fetch('http://127.0.0.1:5000/start-recording?recording=true');
         const data = await response.json();
         console.log("timeline data !", data);
-        getVideo(data);
+        // only a finished recording returns a list of events; errors and
+        // "Already recording" come back as an object
+        if (Array.isArray(data)) {
+          getVideo(data);
+        }
       }
       catch (error) {
         console.error('Error game stats', error)
