@@ -47,11 +47,14 @@ def player_list():
 
     except:
         print("shit dont work")
+    return players
 
 def active_summoners_kills():
-    summ = get_summoner().split()
-    ppuid = get_summoner_by_name("americas", summ[0], summ[1])
-    match = most_recent_match(ppuid)
+    # Riot IDs are "name#tag"; names can contain spaces
+    summ = get_summoner().split("#")
+    ppuid = get_summoner_by_name("americas", summ[0], summ[1])["puuid"]
+    # match ids come newest first
+    match = most_recent_match(ppuid)[0]
     timeline = get_timeline(match)
     kills = champ_kills(timeline)
     player_kills = []
