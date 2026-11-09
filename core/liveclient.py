@@ -30,6 +30,12 @@ def get_summoner():
     except Exception as e:
         print("Summoner not found")
 
+#current game clock in seconds
+def game_time():
+    url = "https://127.0.0.1:2999/liveclientdata/gamestats"
+    res = requests.get(url, verify=False)
+    return res.json()["gameTime"]
+
 def player_list():
     url = "https://127.0.0.1:2999/liveclientdata/playerlist"
     players = []
@@ -82,6 +88,13 @@ def get_data(obs_start_time, poll_interval=1):
                 data = res.json()
                 events = data["Events"]
 
+                # offset = seconds into the recording when the game clock was 0.
+                # anchored to the current game time so it is also right when
+                # polling starts mid-game (old events arrive all at once then)
+                if offset is None:
+                    offset = (time.time() - obs_start_time) - game_time()
+                    print(f"Offset = {offset:.2f}s")
+
                 for event in events:
                     event_id = event.get("EventID")
                     if event_id in seen_ids:
@@ -92,11 +105,10 @@ def get_data(obs_start_time, poll_interval=1):
                     #consider case where they start recording in middle of game
                     #make sure gamestart -> never little offset
                     if name == "GameStart":
-                        offset = time.time() - obs_start_time
-                        print(f"GameStart detected. Offset = {offset:.2f}s")
+                        print("GameStart detected.")
 
                     elif name == "ChampionKill" and event["KillerName"] == summoner_name:
-                        vod_time = time.time() - obs_start_time
+                        vod_time = offset + event["EventTime"]
                         print(f"[{vod_time:.2f}s] Kill: {event['KillerName']} → {event['VictimName']}")
                         game_events.append({
                             "type": "kill",
@@ -108,7 +120,7 @@ def get_data(obs_start_time, poll_interval=1):
                         })
 
                     elif name == "Multikill" and event["KillerName"] == summoner_name:
-                        vod_time = time.time() - obs_start_time
+                        vod_time = offset + event["EventTime"]
                         print(f"[{vod_time:.2f}s] Multikill: {event['KillerName']} x{event['KillStreak']}")
                         game_events.append({
                             "type": "multikill",
