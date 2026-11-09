@@ -14,16 +14,11 @@
       <span class="brand-name">Insights</span>
     </div>
 
-    <div class="status" id="status" data-state="idle" role="status" aria-live="polite">
+    <div class="status" id="status" data-state="starting" role="status" aria-live="polite">
       <span class="status-dot" aria-hidden="true"></span>
-      <span id="status-text">Idle</span>
+      <span id="status-text">Starting…</span>
       <span class="status-hint" id="status-hint"></span>
     </div>
-
-    <button id="recordBtn" class="record-btn" onclick="toggleRecording()">
-      <span class="record-icon" aria-hidden="true"></span>
-      <span id="recordLabel">Start</span>
-    </button>
   </header>
 
   <main class="layout">
@@ -34,8 +29,8 @@
             <rect x="2.5" y="6" width="13" height="12" rx="2.5"/>
             <path d="M15.5 10.5l5-3v9l-5-3"/>
           </svg>
-          <p class="placeholder-title">No recording loaded</p>
-          <p class="placeholder-text">Press Start before a game. When the game ends, the video and your key moments show up here.</p>
+          <p id="placeholder-title" class="placeholder-title">No games yet</p>
+          <p id="placeholder-text" class="placeholder-text">Play a game of League. Recording starts by itself when the game loads, and the video and your key moments show up here when it ends.</p>
         </div>
         <video id="vod" onclick="play()">
           <source id="vod-source" type="video/mp4">
@@ -67,7 +62,10 @@
 
     <aside class="events">
       <div class="events-header">
-        <h2>Key moments</h2>
+        <div>
+          <h2>Key moments</h2>
+          <p id="game-meta" class="game-meta"></p>
+        </div>
         <span id="event-count" class="count">0</span>
       </div>
       <ul id="event-list" class="event-list"></ul>

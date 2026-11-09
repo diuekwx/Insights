@@ -29,6 +29,8 @@ and assists, and other critical events throughout the game, for post-game review
 **Run**
 
 `npm start` opens the app and starts the Python server; its output shows in the same terminal.
-Click **start** before or during a game: recording starts when League's game window opens and
-stops when the game closes (or when you click **stop**). The video and kill ticks load afterwards.
+While the app is open it records every game by itself: OBS starts recording when League's game
+window opens (the loading screen) and stops when it closes. Each game's kill list is saved in
+`games/` next to the path of its video, and the newest game loads in the app once it is saved.
+The status in the top bar shows what the recorder is doing.
 Developer tools: View → Toggle Developer Tools (Ctrl+Shift+I).

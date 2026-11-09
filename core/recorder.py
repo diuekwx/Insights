@@ -56,12 +56,6 @@ def websocket(timeout=30):
 def get_path(ws):
     return ws.get_record_directory().record_directory
 
-# path of the last finished video, for /get-video
-last_video_path = None
-
-def get_last_video():
-    return last_video_path
-
 def wait_until_stopped(ws, timeout=60):
     # stop_record returns before OBS has finished writing the file
     deadline = time.time() + timeout
@@ -71,8 +65,9 @@ def wait_until_stopped(ws, timeout=60):
 # delete video
 
 
+# stops OBS and returns the path of the finished video: the compressed copy,
+# or the original recording if compression failed
 def disconnect(ws):
-    global last_video_path
     try:
         # OBS reports the file it wrote (any format: mp4, mkv, ...), so there
         # is no need to guess the newest file in the folder
@@ -82,9 +77,8 @@ def disconnect(ws):
         # only change the extension, not every ".mp4" in the folder names
         compressed_path = os.path.splitext(recording)[0] + "_compressed.mp4"
         if compress_video(recording, compressed_path):
-            last_video_path = compressed_path
-        else:
-            last_video_path = recording
+            return compressed_path
+        return recording
     finally:
         # close the websocket even if compressing the file fails
         ws.disconnect()

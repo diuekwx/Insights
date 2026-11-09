@@ -1,33 +1,27 @@
-// Renderer: talks to the Flask server on 127.0.0.1:5000 and shows the
-// recorded game with its key moments on a timeline.
+// Renderer: polls the Flask server on 127.0.0.1:5000 for what the recorder
+// is doing, and shows the newest recorded game with its key moments on a
+// timeline. Recording itself is automatic (see core/detector.py).
 
 const API = 'http://127.0.0.1:5000';
-const LEAD_IN = 5; // seconds shown before an event when jumping to it
+const POLL_MS = 2000; // how often to ask the server for its status
+const LEAD_IN = 5;    // seconds shown before an event when jumping to it
 
 const vod = document.getElementById('vod');
 const track = document.getElementById('track');
 
-let sessionState = 'idle'; // idle | active | stopping | loading | ready | error
-let startPending = false;  // the long /start-recording request is still open
+let loadedGameId = null; // id of the game shown in the player
+let connected = false;   // the server has answered at least once
+let failedPolls = 0;
 let timelineEvents = [];
 let seeking = false;
 
-const STATUS_TEXT = {
-  idle: 'Idle',
-  active: 'Session active',
-  stopping: 'Stopping…',
-  loading: 'Loading video…',
-  ready: 'Ready',
-  error: 'Error',
-};
-
-const STATUS_HINT = {
-  idle: 'Press Start, then launch a game',
-  active: 'Waiting for a game, or recording it',
-  stopping: 'Stopping OBS and compressing the video',
-  loading: '',
-  ready: '',
-  error: '',
+const STATUS = {
+  starting: { text: 'Starting…', hint: 'Waiting for the recorder to start' },
+  watching: { text: 'Watching', hint: 'Recording starts by itself when a game loads' },
+  recording: { text: 'Recording', hint: 'Kills are collected as they happen' },
+  saving: { text: 'Saving…', hint: 'Stopping OBS and compressing the video' },
+  error: { text: 'Recording failed', hint: '' },
+  offline: { text: 'Recorder offline', hint: 'Can’t reach the Python server on port 5000' },
 };
 
 const MULTIKILL_NAMES = { 2: 'Double kill', 3: 'Triple kill', 4: 'Quadra kill', 5: 'Penta kill' };
@@ -45,6 +39,10 @@ function formatTime(seconds) {
   return `${sign}${h ? h + ':' : ''}${mm}:${String(s).padStart(2, '0')}`;
 }
 
+function formatDate(epochSeconds) {
+  return new Date(epochSeconds * 1000).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' });
+}
+
 function eventLabel(event) {
   if (event.type === 'multikill') return MULTIKILL_NAMES[event.kills] || `${event.kills}× kill`;
   return 'Kill';
@@ -54,83 +52,78 @@ function eventDetail(event) {
   return event.type === 'kill' ? event.victim : '';
 }
 
-function setState(state, hint) {
-  sessionState = state;
+// ---- recorder status ----------------------------------------------------------
+
+function showStatus(state, detail) {
+  const info = STATUS[state] || { text: state, hint: '' };
+  const hint = detail || info.hint;
   document.getElementById('status').dataset.state = state;
-  document.getElementById('status-text').textContent = STATUS_TEXT[state];
-  document.getElementById('status-hint').textContent = hint ?? STATUS_HINT[state];
-
-  const button = document.getElementById('recordBtn');
-  const active = state === 'active' || state === 'stopping';
-  button.classList.toggle('is-active', active);
-  button.disabled = state === 'stopping' || state === 'loading';
-  document.getElementById('recordLabel').textContent =
-    state === 'stopping' ? 'Stopping…' : active ? 'Stop' : 'Start';
+  document.getElementById('status-text').textContent = info.text;
+  const hintNode = document.getElementById('status-hint');
+  hintNode.textContent = hint;
+  hintNode.title = hint; // full text on hover when it is cut off
 }
 
-// ---- recording --------------------------------------------------------------
-
-function toggleRecording() {
-  if (sessionState === 'active') stopRecording();
-  else startRecording();
-}
-
-async function stopRecording() {
-  setState('stopping');
+async function poll() {
   try {
-    await fetch(`${API}/start-recording?recording=false`);
-  } catch (error) {
-    console.error('Error stopping', error);
-  }
-  // normally the open start request finishes the job and loads the video;
-  // if this page has none (e.g. it was reloaded mid-session), go back to idle
-  if (!startPending) setState('idle');
-}
-
-async function startRecording() {
-  setState('active');
-  startPending = true;
-  try {
-    // this request stays open until the game (or the session) ends
-    const response = await fetch(`${API}/start-recording?recording=true`);
+    const response = await fetch(`${API}/status`);
     const data = await response.json();
-    console.log('timeline data !', data);
-    // only a finished recording returns a list of events; errors and
-    // "Already recording" come back as an object
-    if (Array.isArray(data)) {
-      getVideo(data);
-    } else if (data.text === 'Already recording') {
-      setState('active', 'A session started earlier is still running');
-    } else if (data.error) {
-      setState('error', data.error);
-    } else {
-      setState('idle', data.status || data.text);
-    }
+    connected = true;
+    failedPolls = 0;
+    showStatus(data.state, data.detail);
+    // a new id means a game finished saving (or the app just opened)
+    if (data.latest && data.latest !== loadedGameId) await loadLatestGame(data.latest);
   } catch (error) {
-    console.error('Error starting recording', error);
-    setState('error', 'Could not reach the recorder. Is the Python server running?');
+    // the server takes a moment to start with the app, so at first only call
+    // it offline after ~10 s of failed polls; once it has answered, at once
+    failedPolls += 1;
+    showStatus(!connected && failedPolls < 5 ? 'starting' : 'offline');
   } finally {
-    startPending = false;
+    setTimeout(poll, POLL_MS);
   }
 }
 
-async function getVideo(timelineData) {
-  setState('loading');
-  timelineEvents = [...timelineData].sort((a, b) => a.vod_time - b.vod_time);
-  renderEventList();
-  try {
-    const response = await fetch(`${API}/get-video`);
-    const data = await response.json();
-    if (typeof data !== 'string') throw new Error(data.text || 'no video path');
-    const videoPath = `file:///${data.replace(/\\/g, '/')}`;
-    console.log(videoPath);
+// ---- loading a game -----------------------------------------------------------
 
-    document.getElementById('vod-source').src = videoPath;
-    vod.load(); // 'loadedmetadata' below finishes the job
+async function loadLatestGame(gameId) {
+  // set first, so a game that fails to load isn't fetched again every poll
+  loadedGameId = gameId;
+  try {
+    const response = await fetch(`${API}/latest-game`);
+    if (!response.ok) throw new Error(`server answered ${response.status}`);
+    const game = await response.json();
+    loadedGameId = game.id;
+    showGame(game);
   } catch (error) {
-    console.error('Error fetching data: ', error);
-    setState('error', 'The game was recorded, but its video could not be found');
+    console.error('Error loading game', error);
+    showPlaceholder('Could not load the last game', String(error.message || error));
   }
+}
+
+function showGame(game) {
+  vod.pause();
+  timelineEvents = [...(game.events || [])].sort((a, b) => a.vod_time - b.vod_time);
+  renderEventList();
+  renderMarkers(NaN); // cleared until the new video's length is known
+  document.getElementById('game-meta').textContent =
+    game.finished_at ? `Game ended ${formatDate(game.finished_at)}` : '';
+  document.getElementById('playButton').disabled = true;
+  document.getElementById('duration').textContent = '0:00';
+
+  if (!game.video) {
+    showPlaceholder('No video for this game', 'OBS did not report a recording file.');
+    return;
+  }
+  showPlaceholder('Loading video…', '');
+  document.getElementById('vod-source').src = `file:///${game.video.replace(/\\/g, '/')}`;
+  vod.load(); // 'loadedmetadata' below finishes the job
+  updateProgress();
+}
+
+function showPlaceholder(title, text) {
+  document.getElementById('placeholder-title').textContent = title;
+  document.getElementById('placeholder-text').textContent = text;
+  document.getElementById('vod-placeholder').classList.remove('hidden');
 }
 
 // ---- player -----------------------------------------------------------------
@@ -211,8 +204,8 @@ function renderEventList() {
   if (timelineEvents.length === 0) {
     const empty = document.createElement('li');
     empty.className = 'empty';
-    empty.textContent = sessionState === 'idle'
-      ? 'Kills from your game will be listed here.'
+    empty.textContent = loadedGameId === null
+      ? 'Kills from your next game will be listed here.'
       : 'No kills recorded this game.';
     list.append(empty);
     return;
@@ -281,18 +274,17 @@ vod.addEventListener('loadedmetadata', () => {
   track.setAttribute('aria-valuemax', Math.floor(vod.duration));
   renderMarkers();
   updateProgress();
-  const n = timelineEvents.length;
-  setState('ready', `${n} key moment${n === 1 ? '' : 's'}`);
 });
 vod.addEventListener('timeupdate', updateProgress);
 vod.addEventListener('play', () => setPlaying(true));
 vod.addEventListener('pause', () => setPlaying(false));
 document.getElementById('vod-source').addEventListener('error', () => {
-  setState('error', 'The video file could not be played');
+  showPlaceholder('The video could not be played', 'The file may have been moved or deleted.');
 });
 
-setState('idle');
+showStatus('starting');
 renderEventList();
+poll();
 
 async function getTicks(){
   try{
