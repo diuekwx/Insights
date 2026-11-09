@@ -7,13 +7,22 @@ import os
 from core.utils import check_process
 
 def compress_video(input_path, output_path, crf=28):
-    subprocess.run([
-        'ffmpeg',
-        '-i', input_path,
-        '-vcodec', 'libx264',
-        '-crf', str(crf),
-        output_path
-    ])
+    # -y overwrites an existing output instead of asking on stdin, and stdin is
+    # closed so ffmpeg can never sit waiting for an answer
+    try:
+        result = subprocess.run([
+            'ffmpeg',
+            '-y',
+            '-i', input_path,
+            '-vcodec', 'libx264',
+            '-crf', str(crf),
+            output_path
+        ], stdin=subprocess.DEVNULL)
+    except FileNotFoundError:
+        print("ffmpeg not found on PATH, skipping compression")
+        return
+    if result.returncode != 0:
+        print("ffmpeg failed with exit code", result.returncode)
 
 def launch_obs():
     obs_path = "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"
@@ -55,7 +64,8 @@ def disconnect(ws):
 
         most_recent = retrieve_recent(record_path)
 
-        compressed_path = most_recent.replace(".mp4", "_compressed.mp4")
+        # only change the extension, not every ".mp4" in the folder names
+        compressed_path = os.path.splitext(most_recent)[0] + "_compressed.mp4"
         compress_video(most_recent, compressed_path)
     finally:
         # close the websocket even if finding/compressing the file fails
