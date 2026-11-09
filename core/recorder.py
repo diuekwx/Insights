@@ -2,7 +2,6 @@ import obsws_python as obs
 import time
 from .settings import OBS
 import subprocess
-import glob
 import os
 from core.utils import check_process
 
@@ -20,9 +19,11 @@ def compress_video(input_path, output_path, crf=28):
         ], stdin=subprocess.DEVNULL)
     except FileNotFoundError:
         print("ffmpeg not found on PATH, skipping compression")
-        return
+        return False
     if result.returncode != 0:
         print("ffmpeg failed with exit code", result.returncode)
+        return False
+    return True
 
 def launch_obs():
     obs_path = "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"
@@ -44,31 +45,37 @@ def websocket():
 def get_path(ws):
     return ws.get_record_directory().record_directory
 
-def retrieve_recent(path):
-    list_of_files = glob.glob(os.path.join(path, '*.mp4'))
-    list_of_files.sort(key=os.path.getmtime)
-    
-    return list_of_files[-1]
+# path of the last finished video, for /get-video
+last_video_path = None
+
+def get_last_video():
+    return last_video_path
+
+def wait_until_stopped(ws, timeout=60):
+    # stop_record returns before OBS has finished writing the file
+    deadline = time.time() + timeout
+    while ws.get_record_status().output_active and time.time() < deadline:
+        time.sleep(0.5)
 
 # delete video
 
 
 def disconnect(ws):
+    global last_video_path
     try:
-        ws.stop_record()
-        time.sleep(2)
-        record_path =  get_path(ws)
-
-        # list_of_files = glob.glob(os.path.join(record_path, '*.mp4'))
-        # list_of_files.sort(key=os.path.getmtime)
-
-        most_recent = retrieve_recent(record_path)
+        # OBS reports the file it wrote (any format: mp4, mkv, ...), so there
+        # is no need to guess the newest file in the folder
+        recording = ws.stop_record().output_path
+        wait_until_stopped(ws)
 
         # only change the extension, not every ".mp4" in the folder names
-        compressed_path = os.path.splitext(most_recent)[0] + "_compressed.mp4"
-        compress_video(most_recent, compressed_path)
+        compressed_path = os.path.splitext(recording)[0] + "_compressed.mp4"
+        if compress_video(recording, compressed_path):
+            last_video_path = compressed_path
+        else:
+            last_video_path = recording
     finally:
-        # close the websocket even if finding/compressing the file fails
+        # close the websocket even if compressing the file fails
         ws.disconnect()
 
 def record(ws):

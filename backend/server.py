@@ -67,14 +67,11 @@ def stop():
 
 @app.route("/get-video")
 def video():
-    # get video after disconnect -> should return the compressed video
-    ws = websocket()
-    try:
-        path = get_path(ws)
-        recent_path = retrieve_recent(path)
-    finally:
-        # each call opened a new OBS connection and never closed it
-        ws.disconnect()
+    # get video after disconnect -> the compressed video (or the original
+    # recording if compression failed)
+    recent_path = get_last_video()
+    if recent_path is None:
+        return jsonify({"text": "No video recorded yet"})
 
     return jsonify(recent_path)
 
